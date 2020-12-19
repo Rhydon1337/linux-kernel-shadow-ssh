@@ -6,4 +6,5 @@
 
 enum RETURN_CODE{
     SUCCESS,
+    COPY_FROM_USER_FAILED,
 };
