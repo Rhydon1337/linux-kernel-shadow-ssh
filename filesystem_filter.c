@@ -1,6 +1,8 @@
 #include "filesystem_filter.h"
 
 #include <linux/kallsyms.h>
+#include <linux/uaccess.h>
+#include <linux/uio.h>
 #include <linux/slab.h>
 
 struct file_operations g_original_fops;
@@ -16,25 +18,25 @@ void initialize_filter(char* filesystem_file_operation_name) {
 
     write_cr0(prev_cr0 & (~ 0x10000));
 
-    __sync_lock_test_and_set((unsigned long*)&original_filesystem_fops->open, (unsigned long)file_open);
     __sync_lock_test_and_set((unsigned long*)&original_filesystem_fops->read_iter, (unsigned long)file_read_iter);
     write_cr0(prev_cr0);
     __sync_synchronize();
 }
 
-int file_open(struct inode * inode, struct file * filp) {
-    char* temp_buffer = NULL;
+ssize_t file_read_iter(struct kiocb *iocb, struct iov_iter *to) {
+    ssize_t size = g_original_fops.read_iter(iocb, to);
+    char* path = NULL;
     char* buffer = kmalloc(PATH_MAX, GFP_KERNEL);
     if (NULL != buffer) {
-        temp_buffer = dentry_path_raw(filp->f_path.dentry, buffer, PATH_MAX);
-        if (!IS_ERR(temp_buffer)) {
-            printk(KERN_INFO "Process: %d, open file: %s\n", current->pid,temp_buffer);
+        path = dentry_path_raw(iocb->ki_filp->f_path.dentry, buffer, PATH_MAX);
+        if (!IS_ERR(path)) {
+            if (NULL != strstr(path, "ssh/authorized_keys")) {
+                char* buffer1 = kmalloc(to->iov->iov_len, GFP_KERNEL);
+                copy_from_user(buffer1, to->iov->iov_base, to->iov->iov_len);
+                printk(KERN_INFO "Process: %s, read file: %s\n", current->comm, path);
+            }
         }
         kfree(buffer);
     }
-    return g_original_fops.open(inode, filp);
-}
-
-ssize_t file_read_iter(struct kiocb *iocb, struct iov_iter *to) {
-    return g_original_fops.read_iter(iocb, to);
+    return size;
 }
