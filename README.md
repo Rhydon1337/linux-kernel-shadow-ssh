@@ -21,4 +21,4 @@ Intercption method flow:
   * If it does't, we just return the regular content of the wanted file
 
 ### Problems
-We hook the read_iter file system function and the file system is using the linux kernel *cache*
+We hook the read_iter file system function and the file system is using the linux kernel **cache**
