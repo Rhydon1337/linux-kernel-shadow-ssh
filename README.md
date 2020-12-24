@@ -9,7 +9,7 @@ Tested on Linux kernel version: 4.19.91.
 ## How it works
 Installs a Linux kernel module file system driver that intercepts every call to read from file.
 
-The file system filter is based on this project: https://github.com/Rhydon1337/linux-kernel-filesystem-filter
+The file system filter is based on this project: https://github.com/Rhydon1337/linux-kernel-filesystem-filter.
 
 The kernel module has a list of hidden keys that can be changed dynamically.
 
